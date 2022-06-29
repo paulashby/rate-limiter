@@ -9,7 +9,7 @@ ob_start();
 include_once "../config/Database.php";
 include_once "../models/RateLimiter.php";
 
-define("REQUESTS_PER_MINUTE", 2);
+define("REQUESTS_PER_MINUTE", 100);
 $ip = $_SERVER['REMOTE_ADDR'];
 
 // Instantiate database and connect
