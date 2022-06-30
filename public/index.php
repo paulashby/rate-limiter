@@ -28,7 +28,7 @@ if($limit_status['permitted']){
 	$out = array(
 		"Success" => True,
 		"Data" => "Some juicy stuff",
-		"Window" => time() % 60
+		"Window" => time()
 	);
 	echo json_encode($out);	
 } else {
