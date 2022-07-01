@@ -4,8 +4,7 @@ Class SlidingWindow {
 	
 	private $limit;
 
-	// Constructor with DB
-	public function __construct($db, $requests_per_minute) {
+	public function __construct($requests_per_minute) {
 		$this->limit = $requests_per_minute;
 	}
 
