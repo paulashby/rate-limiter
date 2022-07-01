@@ -10,7 +10,7 @@ include_once "../models/RateLimiter.php";
 
 define("REQUESTS_PER_MINUTE", 2);
 $ip = $_SERVER['REMOTE_ADDR'];
-$limiter = new RateLimiter($db, REQUESTS_PER_MINUTE);
+$limiter = new SlidingWindow(REQUESTS_PER_MINUTE);
 $limit_status = $limiter->limit($ip);
 
 header('X-RateLimit-Limit: ' . REQUESTS_PER_MINUTE);
