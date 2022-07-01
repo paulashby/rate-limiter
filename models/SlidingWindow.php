@@ -1,13 +1,11 @@
 <?php
 
-Class RateLimiter {
+Class SlidingWindow {
 	
-	private $conn;
 	private $limit;
 
 	// Constructor with DB
 	public function __construct($db, $requests_per_minute) {
-		$this->conn = $db;
 		$this->limit = $requests_per_minute;
 	}
 
@@ -96,20 +94,5 @@ Class RateLimiter {
 			'log_file' 	=> $log_file,
 			'log' 		=> $log
 		);
-	}
-
-	/**
-	 * Make call to database
-	 *
-	 * @param query: Query string
-	 * @param ip_address: ipv4 or ipv6
-	 * @return Response
-	 */ 
-	private function db_query($query, $ip_address) {
-		$stmt = $this->conn->prepare($query);
-		$stmt->bindParam('ip_address', $ip_address, PDO::PARAM_STR);
-		$stmt->execute();
-
-		return $stmt;
 	}
 }
