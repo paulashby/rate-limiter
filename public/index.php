@@ -6,16 +6,9 @@ header("Content-Type: application/json");
 // Use output buffering so we can update headers
 ob_start();
 
-include_once "../config/Database.php";
 include_once "../models/RateLimiter.php";
 
-define("REQUESTS_PER_MINUTE", 100);
-$ip = $_SERVER['REMOTE_ADDR'];
-
-// Instantiate database and connect
-$database = new Database();
-$db = $database->connect();
-
+define("REQUESTS_PER_MINUTE", 2);
 $ip = $_SERVER['REMOTE_ADDR'];
 $limiter = new RateLimiter($db, REQUESTS_PER_MINUTE);
 $limit_status = $limiter->limit($ip);
@@ -40,9 +33,8 @@ if($limit_status['permitted']){
 		"Code" => "429 - Too Many Requests",
 		"Window" => time() % 60
 	);
-	echo "<h2>Forbidden</h2>";
+	die("Too many requests");
 }
-
 $output = ob_get_contents();
 ob_end_clean();
 
