@@ -1,11 +1,18 @@
 <?php
 
 Class SlidingWindow {
+
+	private const WINDOW_PER_USER = 60;
+	private const WINDOW_ALL_USERS = 300;
 	
 	private $limit;
+	private $all;
+	private $window;
 
-	public function __construct($requests_per_minute) {
+	public function __construct($requests_per_minute, $all = false) {
 		$this->limit = $requests_per_minute;
+		$this->all = $all;
+		$this->window = $all ? self::WINDOW_ALL_USERS : self::WINDOW_PER_USER;
 	}
 
 	/**
@@ -18,7 +25,7 @@ Class SlidingWindow {
 
 		$log_info = $this->log_info();
 		$now = time();
-		$log_expired = file_exists($log_info['log_file']) && $now - filemtime($log_info['log_file']) > 60;
+		$log_expired = file_exists($log_info['log_file']) && $now - filemtime($log_info['log_file']) > $this->window;
 
 		if (!is_array($log_info['log']) || $log_expired) {
 			// Make a new log as there are no current records for this ip address
@@ -26,15 +33,14 @@ Class SlidingWindow {
 		} else {
 			// All good, use existing log
 			$log = $log_info['log'];
-			$minute_ago = $now - 60;
+			$window_started = $now - $this->window;
 
-			// Prune if first so we're not counting requests made more than 1 minute ago
+			// Prune if first so we're not counting requests added before start of this window
 			$request_count = count($log);
 
 			for ($i = 0; $i < $request_count; $i++) { 
-				
-				if ($log[$i] > $minute_ago) {
-					// Subsequent log entries were made within the last minute - we can expect at least one current entry as the log has not expired
+				if ($log[$i] > $window_started) {
+					// Subsequent log entries were made within the current window - we can expect at least one current entry as the log has not expired
 					$log = array_slice($log, $i);
 					break;
 				}
@@ -46,27 +52,49 @@ Class SlidingWindow {
 		$permitted = $request_count < $this->limit;
 
 		if($request_count) {
-			// Time window resets 1 minute after earliest listed request
-			$reset_at = $log[0] + 60;
+			// Time window resets $window seconds after earliest listed request
+			$reset_at = $log[0] + $this->window;
 		} else {
-			// This is first request - time window resets 1 minute from now
-			$reset_at = time() + 60;
+			// This is first request - time window resets $window seconds from now
+			$reset_at = time() + $this->window;
 		}
+		$limit_remaining = $this->limit - $request_count;
+
+		$response_data = array(
+			'permitted' => $permitted,
+			'message' 	=> "",
+			'headers' 	=> array(
+				'X-RateLimit-Limit: ' . $this->limit,
+				'X-RateLimit-Remaining: ' . $limit_remaining,
+				'X-RateLimit-Reset: ' . $reset_at
+			)
+		);
 
 		if($permitted) {
 			// Add a record for this request;
 			$log[] = time();
 			file_put_contents($log_info['log_file'], json_encode($log));
 			$request_count++;
+		} else {
+			$server_protocol = $_SERVER["SERVER_PROTOCOL"];
+			$retry_after = $reset_at - $now;
+			if($this->all) {
+				// Suspected DDOS attack
+				$response_data['headers'] = array(
+					array("$server_protocol 503 Service Temporarily Unavailable", true, 503),
+					"Cache-Control: no-store",
+					'Retry-After: ' . $retry_after
+				);
+				$response_data['message'] = "Service temporarily unavailable. Please try later";
+			} else {
+				$response_data['headers'] = array_merge($response_data['headers'], array(
+					array("$server_protocol 429 Too Many Requests", true, 429),
+					'Retry-After: ' . $retry_after % 60)
+				);
+				$response_data['message'] = "Too many requests";
+			}
 		}
-		
-		return array(
-			'X_RateLimit_Reset' 	=> $reset_at,
-			'X_RateLimit_Remaining'	=> $this->limit - $request_count,
-			'X_RateLimit_Limit'		=> $this->limit,
-			'Retry_After' 			=> ($reset_at - $now) % 60,
-			'permitted'				=> $permitted
-		);
+		return $response_data;
 	}
 
 	/**
@@ -75,9 +103,14 @@ Class SlidingWindow {
 	* @return Array containing log file path string and parsed log array
 	 */ 
 	private function log_info() {
-		$ip_address = $_SERVER['REMOTE_ADDR'];
-		$log_name = "ip_$ip_address.json";
 		$dir_depth = getenv('ENV_TYPE') === "dev" ? "/../../" : "/../";
+
+		if($this->all) {
+			$log_name = "ip_all.json";
+		} else {
+			$ip_address = $_SERVER['REMOTE_ADDR'];
+			$log_name = "ip_$ip_address.json";
+		}
 		$log_file = realpath(__DIR__ . $dir_depth) . "/req_log/$log_name";
 		$log = file($log_file);
 
