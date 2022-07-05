@@ -35,7 +35,7 @@ Class SlidingWindow {
 			$log = $log_info['log'];
 			$window_started = $now - $this->window;
 
-			// Prune if first so we're not counting requests added before start of this window
+			// Prune first so we're not counting requests added before start of this window
 			$request_count = count($log);
 
 			for ($i = 0; $i < $request_count; $i++) { 
