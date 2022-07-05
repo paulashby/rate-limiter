@@ -63,11 +63,6 @@ Class SlidingWindow {
 		header('X-RateLimit-Remaining: ' . $limit_remaining);
 		header('X-RateLimit-Reset: ' . $reset_at);
 
-		$response_data = array(
-			'permitted' => $permitted,
-			'message' 	=> "",
-		);
-
 		if($permitted) {
 			// Add a record for this request;
 			$log[] = time();
@@ -88,7 +83,7 @@ Class SlidingWindow {
 			die("Too many requests");
 
 		}
-		return $response_data;
+		return void;
 	}
 
 	/**
