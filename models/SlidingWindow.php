@@ -50,7 +50,6 @@ Class SlidingWindow {
 		// Get requests from this ip address made in the previous minute
 		$request_count = count($log);
 		$permitted = $request_count < $this->limit;
-
 		if($request_count) {
 			// Time window resets $window seconds after earliest listed request
 			$reset_at = $log[0] + $this->window;
@@ -60,14 +59,13 @@ Class SlidingWindow {
 		}
 		$limit_remaining = $this->limit - $request_count;
 
+		header('X-RateLimit-Limit: ' . $this->limit);
+		header('X-RateLimit-Remaining: ' . $limit_remaining);
+		header('X-RateLimit-Reset: ' . $reset_at);
+
 		$response_data = array(
 			'permitted' => $permitted,
 			'message' 	=> "",
-			'headers' 	=> array(
-				'X-RateLimit-Limit: ' . $this->limit,
-				'X-RateLimit-Remaining: ' . $limit_remaining,
-				'X-RateLimit-Reset: ' . $reset_at
-			)
 		);
 
 		if($permitted) {
@@ -80,19 +78,15 @@ Class SlidingWindow {
 			$retry_after = $reset_at - $now;
 			if($this->all) {
 				// Suspected DDOS attack
-				$response_data['headers'] = array(
-					array("$server_protocol 503 Service Temporarily Unavailable", true, 503),
-					"Cache-Control: no-store",
-					'Retry-After: ' . $retry_after
-				);
-				$response_data['message'] = "Service temporarily unavailable. Please try later";
-			} else {
-				$response_data['headers'] = array_merge($response_data['headers'], array(
-					array("$server_protocol 429 Too Many Requests", true, 429),
-					'Retry-After: ' . $retry_after % 60)
-				);
-				$response_data['message'] = "Too many requests";
-			}
+				header("$server_protocol 503 Service Temporarily Unavailable", true, 503);
+				header("Cache-Control: no-store");
+				header('Retry-After: ' . $retry_after);
+				die("Service temporarily unavailable. Please try later");
+			} 
+			header("$server_protocol 429 Too Many Requests", true, 429);
+			header('Retry-After: ' . $retry_after % 60);
+			die("Too many requests");
+
 		}
 		return $response_data;
 	}
@@ -100,9 +94,10 @@ Class SlidingWindow {
 	/**
 	 * Get details of log file
 	 *
-	* @return Array containing log file path string and parsed log array
+	 * @return Array containing log file path string and parsed log array
 	 */ 
 	private function log_info() {
+
 		$dir_depth = getenv('ENV_TYPE') === "dev" ? "/../../" : "/../";
 
 		if($this->all) {
