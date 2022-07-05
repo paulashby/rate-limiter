@@ -23,7 +23,7 @@ Class SlidingWindow {
 	 */ 
 	public function limit($ip_address) {
 
-		$log_info = $this->log_info();
+		$log_info = $this->logInfo();
 		$now = time();
 		$log_expired = file_exists($log_info['log_file']) && $now - filemtime($log_info['log_file']) > $this->window;
 
@@ -83,7 +83,7 @@ Class SlidingWindow {
 			die("Too many requests");
 
 		}
-		return void;
+		return null;
 	}
 
 	/**
@@ -91,7 +91,7 @@ Class SlidingWindow {
 	 *
 	 * @return Array containing log file path string and parsed log array
 	 */ 
-	private function log_info() {
+	private function logInfo() {
 
 		$dir_depth = getenv('ENV_TYPE') === "dev" ? "/../../" : "/../";
 
