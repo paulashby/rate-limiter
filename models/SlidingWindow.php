@@ -50,7 +50,7 @@ Class SlidingWindow {
 		// Get requests from this ip address made in the previous minute
 		$request_count = count($log);
 		$permitted = $request_count < $this->limit;
-		if($request_count) {
+		if ($request_count) {
 			// Time window resets $window seconds after earliest listed request
 			$reset_at = $log[0] + $this->window;
 		} else {
@@ -63,7 +63,7 @@ Class SlidingWindow {
 		header('X-RateLimit-Remaining: ' . $limit_remaining);
 		header('X-RateLimit-Reset: ' . $reset_at);
 
-		if($permitted) {
+		if ($permitted) {
 			// Add a record for this request;
 			$log[] = time();
 			file_put_contents($log_info['log_file'], json_encode($log));
@@ -71,7 +71,7 @@ Class SlidingWindow {
 		} else {
 			$server_protocol = $_SERVER["SERVER_PROTOCOL"];
 			$retry_after = $reset_at - $now;
-			if($this->all) {
+			if ($this->all) {
 				// Suspected DDOS attack
 				header("$server_protocol 503 Service Temporarily Unavailable", true, 503);
 				header("Cache-Control: no-store");
@@ -95,7 +95,7 @@ Class SlidingWindow {
 
 		$dir_depth = getenv('ENV_TYPE') === "dev" ? "/../../" : "/../";
 
-		if($this->all) {
+		if ($this->all) {
 			$log_name = "ip_all.json";
 		} else {
 			$ip_address = $_SERVER['REMOTE_ADDR'];
@@ -104,7 +104,7 @@ Class SlidingWindow {
 		$log_file = realpath(__DIR__ . $dir_depth) . "/req_log/$log_name";
 		$log = file($log_file);
 
-		if(is_array($log)){
+		if (is_array($log)){
 			// Extract array of request times 
 			$log = json_decode($log[0]);
 		} else {
