@@ -93,15 +93,14 @@ Class SlidingWindow {
 	 */ 
 	private function logInfo() {
 
-		$dir_depth = getenv('ENV_TYPE') === "dev" ? "/../../" : "/../";
-
 		if ($this->all) {
 			$log_name = "ip_all.json";
 		} else {
 			$ip_address = $_SERVER['REMOTE_ADDR'];
 			$log_name = "ip_$ip_address.json";
 		}
-		$log_file = realpath(__DIR__ . $dir_depth) . "/req_log/$log_name";
+		
+		$log_file = realpath(__DIR__ . "/../") . "/req_log/$log_name";
 		$log = file($log_file);
 
 		if (is_array($log)){
