@@ -53,7 +53,7 @@ Class SlidingWindow {
 		
 		// Get requests from this ip address made within the current time window
 		$request_count = count($log);
-		$permitted = $request_count <= $this->limit;
+		$permitted = $request_count < $this->limit;
 		if ($request_count) {
 			// Time window resets $window seconds after earliest listed request
 			$reset_at = $log[0] + $this->window;
@@ -61,7 +61,7 @@ Class SlidingWindow {
 			// This is first request - time window resets $window seconds from now
 			$reset_at = time() + $this->window;
 		}
-		$limit_remaining = $this->limit - $request_count;
+		$limit_remaining = max($this->limit - ($request_count + 1), 0);
 
 		header('X-RateLimit-Limit: ' . $this->limit);
 		header('X-RateLimit-Remaining: ' . $limit_remaining);
