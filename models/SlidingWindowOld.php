@@ -1,7 +1,5 @@
 <?php
-/*
- * The only difference between this and the version in the git repo is that the $dir_depth in the logInfo method is one level deeper as I've placed the RateLimiter directory in a utilties directory
- */
+
 Class SlidingWindow {
 
 	private const WINDOW_PER_USER = 60;
@@ -12,8 +10,6 @@ Class SlidingWindow {
 	private $window;
 
 	public function __construct($requests_per_minute, $all = false) {
-		
-		$all = filter_var($all, FILTER_VALIDATE_BOOLEAN);
 		$this->limit = $requests_per_minute;
 		$this->all = $all;
 		$this->window = $all ? self::WINDOW_ALL_USERS : self::WINDOW_PER_USER;
@@ -53,7 +49,7 @@ Class SlidingWindow {
 		
 		// Get requests from this ip address made within the current time window
 		$request_count = count($log);
-		$permitted = $request_count <= $this->limit;
+		$permitted = $request_count < $this->limit;
 		if ($request_count) {
 			// Time window resets $window seconds after earliest listed request
 			$reset_at = $log[0] + $this->window;
@@ -103,6 +99,7 @@ Class SlidingWindow {
 			$ip_address = $_SERVER['REMOTE_ADDR'];
 			$log_name = "ip_$ip_address.json";
 		}
+		
 		$log_file = realpath(__DIR__ . "/../") . "/req_log/$log_name";
 		$log = file($log_file);
 
