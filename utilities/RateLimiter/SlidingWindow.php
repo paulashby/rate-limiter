@@ -1,8 +1,9 @@
 <?php
-/*
- * The only difference between this and the version in the git repo is that the $dir_depth in the logInfo method is one level deeper as I've placed the RateLimiter directory in a utilties directory
- */
+
 Class SlidingWindow {
+
+	// Rate limiting approaches and algorithm descriptions
+	// https://nordicapis.com/everything-you-need-to-know-about-api-rate-limiting/
 
 	private const WINDOW_PER_USER = 60;
 	private const WINDOW_ALL_USERS = 300;
@@ -12,7 +13,7 @@ Class SlidingWindow {
 	private $window;
 
 	public function __construct($requests_per_minute, $all = false) {
-		
+
 		$all = filter_var($all, FILTER_VALIDATE_BOOLEAN);
 		$this->limit = $requests_per_minute;
 		$this->all = $all;
@@ -63,6 +64,8 @@ Class SlidingWindow {
 		}
 		$limit_remaining = max($this->limit - ($request_count + 1), 0);
 
+		// Rate limiting headers
+		// https://developers.support.clio.com/hc/en-us/articles/360023272714-What-Are-The-Rate-Limit-Headers-Returned-After-Each-API-Call-
 		header('X-RateLimit-Limit: ' . $this->limit);
 		header('X-RateLimit-Remaining: ' . $limit_remaining);
 		header('X-RateLimit-Reset: ' . $reset_at);
@@ -100,10 +103,12 @@ Class SlidingWindow {
 		if ($this->all) {
 			$log_name = "ip_all.json";
 		} else {
+			// Get client IP addeess
+			// https://stackoverflow.com/questions/3003145/how-to-get-the-client-ip-address-in-php
 			$ip_address = $_SERVER['REMOTE_ADDR'];
 			$log_name = "ip_$ip_address.json";
 		}
-		$log_file = realpath(__DIR__ . "/../") . "/req_log/$log_name";
+		$log_file = realpath(__DIR__ . "/../../") . "/req_log/$log_name";
 		$log = file($log_file);
 
 		if (is_array($log)){
