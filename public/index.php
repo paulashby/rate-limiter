@@ -3,7 +3,7 @@
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
 
-include_once "../models/SlidingWindow.php";
+include_once "../utilities/RateLimiter/SlidingWindow.php";
 $ip = $_SERVER['REMOTE_ADDR'];
 
 $apiconfig = parse_ini_file(realpath(__DIR__ . "/../") . "/apiconfig.ini");
